@@ -12,6 +12,8 @@
 #ifndef DRV_LSM6DSV16X_H
 #define DRV_LSM6DSV16X_H
 
+#include <stdint.h>
+
 // [LSM6DSV16Xレジスタ]
 typedef enum {
     REG_ADDR_FUNC_CFG_ACCESS = 0x01,
@@ -130,6 +132,46 @@ typedef enum {
     REG_ADDR_FIFO_DATA_OUT_Z_L,
     REG_ADDR_FIFO_DATA_OUT_Z_H,
 } E_LSM6DSV16X_REG_ADDR;
+
+// FUNC_CFG_ACCESSレジスタ(Addr = 0x01)
+typedef union {
+    uint8_t BYTE;
+    struct {
+        uint8_t OIS_CTRL_FROM_UI:1;    // Bit 0 ... OIS_CTRL_FROM_UIビット
+        uint8_t SPI2_RESET:1;          // Bit 1 ... SPI2_RESETビット
+        uint8_t SW_POR:1;              // Bit 2 ... SW_PORビット
+        uint8_t FSM_WR_CTRL_EN:1;      // Bit 3 ... FSM_WR_CTRL_ENビット
+        uint8_t RESERVED:2;            // Bit4~5 ... Reserved
+        uint8_t SHUB_REG_ACCESS:1;     // Bit 6 ... SHUB_REG_ACCESSビット
+        uint8_t EMB_FUNC_REG_ACCESS:1; // Bit 7 ... EMB_FUNC_REG_ACCESSビット
+    } BIT;
+} REG_FUNC_CFG_ACCESS_T;
+
+// PIN_CTRLレジスタ(Addr = 0x02)
+typedef union {
+    uint8_t BYTE;
+    struct {
+        uint8_t RESERVED:2;            // Bit[4:0] ... Reserved
+        uint8_t IBHR_POR_EN:1;         // Bit 5 ... IBHR_POR_ENビット
+        uint8_t SDO_PU_EN:1;           // Bit 6 ... SDO_PU_ENビット
+        uint8_t OIS_PU_DIS:1;          // Bit 7 ... OIS_PU_DISビット
+    } BIT;
+} REG_PIN_CTRL_T;
+
+// IF_CFGレジスタ(Addr = 0x03)
+typedef union {
+    uint8_t BYTE;
+    struct {
+        uint8_t I2C_I3C_DISABLE:1;     // Bit 0 ... I2C_I3C_disableビット
+        uint8_t RESERVED:1;            // Bit 1 ... Reserved
+        uint8_t SIM:1;                 // Bit 2 ... SIMビット
+        uint8_t PP_OD:1;               // Bit 3 ... PP_ODビット
+        uint8_t H_LACTIVE:1;           // Bit 4 ... H_LACTIVEビット
+        uint8_t ASF_CTRL:1;            // Bit 5 ... ASF_CTRLビット
+        uint8_t SHUB_PU_EN:1;          // Bit 6 ... SHUB_PU_ENビット
+        uint8_t SDA_PU_EN:1;           // Bit 7 ... SDA_PU_ENビット
+    } BIT;
+} REG_IF_CFG_T;
 
 void drv_lsm6dsv16x_init(void);
 
