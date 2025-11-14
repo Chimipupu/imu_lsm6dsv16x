@@ -38,12 +38,12 @@
 // [Static]
 static stmdev_ctx_t s_drv_ctx;
 static uint8_t s_who_am_i = 0;
-static uint32_t s_step = 0;
+static lsm6dsv16x_filt_settling_mask_t s_filt_settling_mask;
 
 #if defined(SENSOR_PEDOMETER_USE)
+static uint32_t s_step = 0;
 static uint8_t s_step_event_catched = 0;
 #else
-static lsm6dsv16x_filt_settling_mask_t s_filt_settling_mask;
 static int16_t s_raw_acceleration_buf[3];
 static int16_t s_raw_angular_rate_buf[3];
 static int16_t s_raw_temperature;
@@ -57,6 +57,7 @@ static double_t s_temperature_degC;
 static int32_t platform_write(void *p_handle, uint8_t reg, const uint8_t *p_buf, uint16_t len);
 static int32_t platform_read(void *p_handle, uint8_t reg, uint8_t *p_buf, uint16_t len);
 static void platform_delay(uint32_t ms);
+static void extint_init(void);
 
 #if defined(SENSOR_PEDOMETER_USE)
 static void sensor_pedometer_init(void);
@@ -103,6 +104,8 @@ static void sensor_init(void)
 #if defined(SENSOR_PEDOMETER_USE)
 static void sensor_pedometer_init(void)
 {
+    lsm6dsv16x_emb_pin_int_route_t pin_int = { 0 };
+
     // センサーのpedometer(歩数計)機能を有効化
     lsm6dsv16x_stpcnt_mode_t stpcnt_mode = { 0 };
     stpcnt_mode.step_counter_enable = PROPERTY_ENABLE;
@@ -114,6 +117,7 @@ static void sensor_pedometer_init(void)
     lsm6dsv16x_emb_pin_int1_route_set(&s_drv_ctx, &pin_int);
     //lsm6dsv16x_emb_pin_int2_route_set(&s_drv_ctx, &pin_int);
     lsm6dsv16x_embedded_int_cfg_set(&s_drv_ctx, LSM6DSV16X_INT_LATCH_ENABLE);
+    extint_init();
 
     // センサー出力レート設定
     lsm6dsv16x_xl_data_rate_set(&s_drv_ctx, LSM6DSV16X_ODR_AT_120Hz);
@@ -131,7 +135,7 @@ static void sensor_pedometer_init(void)
  * @brief LSM6DSV16XのINT割り込みハンドラ
  * 
  */
-void lsm6dsv16x_pedometer_handler(void)
+void lsm6dsv16x_pedometer_handler(uint gpio, uint32_t event_mask)
 {
     lsm6dsv16x_embedded_status_t status;
 
@@ -144,13 +148,30 @@ void lsm6dsv16x_pedometer_handler(void)
 #endif // SENSOR_PEDOMETER_USE
 
 /**
+ * @brief 外部割り込設定
+ * 
+ */
+static void extint_init(void)
+{
+    gpio_init(SENSOR_INT_PIN);
+    gpio_set_dir(SENSOR_INT_PIN, GPIO_IN);
+    gpio_pull_up(SENSOR_INT_PIN);
+#if defined(SENSOR_PEDOMETER_USE)
+    gpio_set_irq_enabled_with_callback(SENSOR_INT_PIN,
+                                        GPIO_IRQ_EDGE_RISE,
+                                        true,
+                                        &lsm6dsv16x_pedometer_handler
+                                        );
+    gpio_set_irq_enabled(SENSOR_INT_PIN, GPIO_IRQ_EDGE_FALL, true);
+#endif
+}
+
+/**
  * @brief LSM6DSV16Xアプリ初期化
  * 
  */
 void app_lsm6dsv16x_init(void)
 {
-    lsm6dsv16x_emb_pin_int_route_t pin_int = { 0 };
-
     // ドライバーにコールバック関数を渡す
     s_drv_ctx.write_reg = platform_write;
     s_drv_ctx.read_reg = platform_read;
@@ -177,7 +198,7 @@ void app_lsm6dsv16x_init(void)
 #else
     // センサーから生データをReadできる設定で初期化
     sensor_init();
-#endif // SENSOR_PEDOMETER_USE
+#endif
 }
 
 /**
@@ -236,5 +257,5 @@ void app_lsm6dsv16x_main(void)
                             s_raw_temperature);
         printf("Temperature [degC]:%6.2f\r\n", s_temperature_degC);
         }
-#endif // SENSOR_PEDOMETER_USE
+#endif
 }

@@ -40,25 +40,27 @@
 
 // ---------------------------------------------------
 // [Define]
-// #define HW_PIO_USE
+
+// GPIO
+#define SENSOR_INT_PIN      20 // センサからの割り込みピン GPIO25
 
 // I2C
-#define I2C_PORT        i2c0
-#define I2C_SDA         8
-#define I2C_SCL         9
+#define I2C_PORT            i2c0
+#define I2C_SDA             8
+#define I2C_SCL             9
 
 // SPI
-#define SPI_PORT        spi0
-#define PIN_MISO        16
-#define PIN_CS          17
-#define PIN_SCK         18
-#define PIN_MOSI        19
+#define SPI_PORT            spi0
+#define PIN_MISO            16
+#define PIN_CS              17
+#define PIN_SCK             18
+#define PIN_MOSI            19
 
 // UART
-#define UART_PORT       uart1
-#define BAUD_RATE       115200
-#define UART_TX_PIN     4
-#define UART_RX_PIN     5
+#define UART_PORT           uart1
+#define BAUD_RATE           115200
+#define UART_TX_PIN         4
+#define UART_RX_PIN         5
 
 // ---------------------------------------------------
 // [Global]
