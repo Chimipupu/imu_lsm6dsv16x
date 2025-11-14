@@ -38,6 +38,8 @@
 // [Static]
 static stmdev_ctx_t s_drv_ctx;
 static uint8_t s_who_am_i = 0;
+static uint8_t s_step_event_catched = 0;
+static uint32_t s_step = 0;
 
 // ---------------------------------------------------
 // [Prototype]
@@ -46,7 +48,7 @@ static int32_t platform_read(void *p_handle, uint8_t reg, uint8_t *p_buf, uint16
 static void platform_delay(uint32_t ms);
 
 // ---------------------------------------------------
-
+// [Static関数]
 static int32_t platform_write(void *p_handle, uint8_t reg, const uint8_t *p_buf, uint16_t len)
 {
     i2c_write_blocking(p_handle, reg, p_buf, len, false);
@@ -62,6 +64,25 @@ static void platform_delay(uint32_t ms)
     sleep_ms(ms);
 }
 
+
+// ---------------------------------------------------
+// [Global関数]
+
+/**
+ * @brief LSM6DSV16XのINT割り込みハンドラ
+ * 
+ */
+void lsm6dsv16x_pedometer_handler(void)
+{
+    lsm6dsv16x_embedded_status_t status;
+
+    lsm6dsv16x_embedded_status_get(&s_drv_ctx, &status);
+
+    if (status.step_detector) {
+        s_step_event_catched = 1;
+    }
+}
+
 /**
  * @brief LSM6DSV16Xアプリ初期化
  * 
@@ -69,7 +90,6 @@ static void platform_delay(uint32_t ms)
 void app_lsm6dsv16x_init(void)
 {
     lsm6dsv16x_emb_pin_int_route_t pin_int = { 0 };
-    lsm6dsv16x_stpcnt_mode_t stpcnt_mode = { 0 };
 
     // ドライバーにコールバック関数を渡す
     s_drv_ctx.write_reg = platform_write;
@@ -91,11 +111,14 @@ void app_lsm6dsv16x_init(void)
     // センサーブロックデータ出力設定
     lsm6dsv16x_block_data_update_set(&s_drv_ctx, PROPERTY_ENABLE);
 
-    //  pedometer(歩数計)機能を有効化
+#ifdef SENSOR_PEDOMETER_USE
+    // センサーのpedometer(歩数計)機能を有効化
+    lsm6dsv16x_stpcnt_mode_t stpcnt_mode = { 0 };
     stpcnt_mode.step_counter_enable = PROPERTY_ENABLE;
     stpcnt_mode.false_step_rej = PROPERTY_ENABLE;
     lsm6dsv16x_stpcnt_mode_set(&s_drv_ctx, stpcnt_mode);
     pin_int.step_det = PROPERTY_ENABLE;
+#endif // SENSOR_PEDOMETER_USE
 
     // センサー外部割り込みピン設定
     lsm6dsv16x_emb_pin_int1_route_set(&s_drv_ctx, &pin_int);
@@ -114,5 +137,14 @@ void app_lsm6dsv16x_init(void)
  */
 void app_lsm6dsv16x_main(void)
 {
-    // TODO:LSM6DSV16Xアプリメインの実装
+    // 歩数計アプリ
+#ifdef SENSOR_PEDOMETER_USE
+    uint16_t steps;
+    if (s_step_event_catched) {
+        s_step_event_catched = 0;
+        lsm6dsv16x_stpcnt_steps_get(&s_drv_ctx, &steps);
+        s_step += (uint32_t)steps;
+        printf("Sensor Pedometer Steps :%d\r\n", s_step);
+    }
+#endif // SENSOR_PEDOMETER_USE
 }
