@@ -1,3 +1,6 @@
 [submodule "src/dev_lsm6dsv16x/Driver/lsm6dsv16x-pid"]
 	path = src/dev_lsm6dsv16x/Driver/lsm6dsv16x-pid
 	url = https://github.com/STMicroelectronics/lsm6dsv16x-pid.git
+[submodule "picosdk_mapfile_paser_py"]
+	path = picosdk_mapfile_paser_py
+	url = https://github.com/Chimipupu/picosdk_mapfile_paser_py.git

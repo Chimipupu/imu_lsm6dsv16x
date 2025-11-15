@@ -14,10 +14,12 @@
 
 // ---------------------------------------------------
 // [コンパイルスイッチ]
-#define SENSOR_PEDOMETER_USE // センサーのpedometer(歩数計)機能の使用有無
+// #define SENSOR_PEDOMETER_USE // センサーのpedometer(歩数計)機能の使用有無
 
 // ---------------------------------------------------
 // [Define]
+#define I2C_SLAVE_ADDR_LSM6DSV16X    0x6A
+// #define I2C_SLAVE_ADDR_LSM6DSV16X    0x6B
 
 // ---------------------------------------------------
 // [Prototype]

@@ -24,7 +24,6 @@
 // [Prototype]
 static void drv_pio_init(void);
 static void drv_dma_init(void);
-static void drv_i2c_init(void);
 static void drv_spi_init(void);
 static void drv_uart_init(void);
 static void drv_wdt_init(void);
@@ -92,17 +91,11 @@ static void drv_dma_init(void)
 
     dma_channel_wait_for_finish_blocking(chan);
 
-    // puts(dst);
-}
-
-static void drv_i2c_init(void)
-{
-    i2c_init(I2C_PORT, 400*1000);
-
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
+#if 1
+    printf("%s\r\n", dst);
+#else
+    puts(dst);
+#endif
 }
 
 static void drv_spi_init(void)
@@ -145,16 +138,17 @@ int main()
     // [Pico SDK Init]
     stdio_init_all();
 
+    // [DMA Init]
+    drv_dma_init();
+
     // [UART Init]
-    drv_uart_init();
-    printf("System Clock Frequency is %d Hz\n", clock_get_hz(clk_sys));
-    printf("USB Clock Frequency is %d Hz\n", clock_get_hz(clk_usb));
+    // drv_uart_init();
 
     // [PIO Init]
     drv_pio_init();
 
     // [I2C Init]
-    drv_i2c_init();
+    app_lsm6dsv16x_init();
 
     // [SPI Init]
     drv_spi_init();
@@ -165,8 +159,10 @@ int main()
     // [WDT Init]
     drv_wdt_init();
 
+    printf("System Clock Frequency is %d Hz\n", clock_get_hz(clk_sys));
+    printf("USB Clock Frequency is %d Hz\n", clock_get_hz(clk_usb));
+
     // [App Init]
-    app_lsm6dsv16x_init();
 
     while (true)
     {

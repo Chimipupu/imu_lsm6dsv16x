@@ -48,8 +48,8 @@ pico_set_program_version(dev_lsm6dsv16x "0.1")
 pico_generate_pio_header(dev_lsm6dsv16x ${CMAKE_CURRENT_LIST_DIR}/blink.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(dev_lsm6dsv16x 0)
-pico_enable_stdio_usb(dev_lsm6dsv16x 1)
+pico_enable_stdio_uart(dev_lsm6dsv16x 1)
+pico_enable_stdio_usb(dev_lsm6dsv16x 0)
 
 # Add the standard library to the build
 target_link_libraries(dev_lsm6dsv16x

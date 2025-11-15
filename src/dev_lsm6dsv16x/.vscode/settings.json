@@ -44,5 +44,6 @@
         "i2c.h": "c",
         "format": "c",
         "common.h": "c"
-    }
+    },
+    "cortex-debug.variableUseNaturalFormat": false
 }

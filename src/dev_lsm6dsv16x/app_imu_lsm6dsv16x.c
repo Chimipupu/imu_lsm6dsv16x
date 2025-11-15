@@ -54,6 +54,7 @@ static double_t s_temperature_degC;
 
 // ---------------------------------------------------
 // [Prototype]
+static void drv_i2c_init(void);
 static int32_t platform_write(void *p_handle, uint8_t reg, const uint8_t *p_buf, uint16_t len);
 static int32_t platform_read(void *p_handle, uint8_t reg, uint8_t *p_buf, uint16_t len);
 static void platform_delay(uint32_t ms);
@@ -67,14 +68,67 @@ static void sensor_init(void);
 
 // ---------------------------------------------------
 // [Static関数]
+void i2c_slave_scan(i2c_inst_t *p_i2c_port)
+{
+    int32_t ret = 0xFF;
+    uint8_t addr, dummy = 0x00;
+    uint8_t slave_count = 0;
+    uint8_t slave_addr_buf[128] = {0};
+
+    memset(&slave_addr_buf[0], 0x00, sizeof(slave_addr_buf));
+
+    // 7bitのI2Cスレーブアドレス(0x00～0x7F)をスキャン
+    printf("Scanning I2C bus...\n");
+    printf("       0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
+    for (addr = 0; addr <= 0x7F; addr++)
+    {
+        if ((addr & 0x0F) == 0) {
+            printf("0x%02X: ", addr & 0xF0);
+        }
+
+        ret = i2c_write_blocking(p_i2c_port, addr, &dummy, 1, true);
+        if (ret >= 0) {
+            printf(" * ");
+            slave_addr_buf[slave_count] = addr;
+            slave_count++;
+        } else {
+            printf(" - ");
+        }
+
+        if ((addr & 0x0F) == 0x0F) {
+            printf("\n");
+        }
+    }
+
+    printf("\nI2C Scan complete! (Slave:%d", slave_count);
+    for (uint8_t i = 0; i < slave_count; i++) {
+        printf(", 0x%02X", slave_addr_buf[i]);
+    }
+    printf(")\n");
+}
+
+static void drv_i2c_init(void)
+{
+    // i2c_init(I2C_PORT, 100*1000);
+    i2c_init(I2C_PORT, 400*1000);
+    // i2c_init(I2C_PORT, 1000*1000);
+
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SDA);
+    gpio_pull_up(I2C_SCL);
+}
+
 static int32_t platform_write(void *p_handle, uint8_t reg, const uint8_t *p_buf, uint16_t len)
 {
-    i2c_write_blocking(p_handle, reg, p_buf, len, false);
+    i2c_write_blocking(p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, &reg, 1, true);
+    i2c_write_blocking(p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, p_buf, len, true);
 }
 
 static int32_t platform_read(void *p_handle, uint8_t reg, uint8_t *p_buf, uint16_t len)
 {
-    i2c_read_blocking(p_handle, reg, p_buf, len, false);
+    i2c_write_blocking(p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, &reg, 1, true);
+    i2c_read_blocking(p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, p_buf, len, false);
 }
 
 static void platform_delay(uint32_t ms)
@@ -117,7 +171,6 @@ static void sensor_pedometer_init(void)
     lsm6dsv16x_emb_pin_int1_route_set(&s_drv_ctx, &pin_int);
     //lsm6dsv16x_emb_pin_int2_route_set(&s_drv_ctx, &pin_int);
     lsm6dsv16x_embedded_int_cfg_set(&s_drv_ctx, LSM6DSV16X_INT_LATCH_ENABLE);
-    extint_init();
 
     // センサー出力レート設定
     lsm6dsv16x_xl_data_rate_set(&s_drv_ctx, LSM6DSV16X_ODR_AT_120Hz);
@@ -172,18 +225,24 @@ static void extint_init(void)
  */
 void app_lsm6dsv16x_init(void)
 {
+    // I2C初期化
+    drv_i2c_init();
+    i2c_slave_scan(I2C_PORT);
+    extint_init();
+
     // ドライバーにコールバック関数を渡す
     s_drv_ctx.write_reg = platform_write;
     s_drv_ctx.read_reg = platform_read;
     s_drv_ctx.mdelay = platform_delay;
     s_drv_ctx.handle = I2C_PORT;
 
-#if 1
+#if 0
     // センサーの接続確認
-    lsm6dsv16x_device_id_get(&s_drv_ctx, &s_who_am_i);
-    if (s_who_am_i != LSM6DSV16X_ID) {
-        while (1);
+    while(s_who_am_i != LSM6DSV16X_ID)
+    {
+        lsm6dsv16x_device_id_get(&s_drv_ctx, &s_who_am_i);
     }
+    printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
 #endif
 
     // センサー初期化
@@ -217,6 +276,9 @@ void app_lsm6dsv16x_main(void)
         printf("Sensor Pedometer Steps :%d\r\n", s_step);
     }
 #else
+    lsm6dsv16x_device_id_get(&s_drv_ctx, &s_who_am_i);
+    printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
+
     // [センサーの生データのRead]
     lsm6dsv16x_data_ready_t drdy;
     lsm6dsv16x_flag_data_ready_get(&s_drv_ctx, &drdy);
