@@ -138,17 +138,18 @@ int main()
     // [Pico SDK Init]
     stdio_init_all();
 
-    // [DMA Init]
-    drv_dma_init();
-
     // [UART Init]
     // drv_uart_init();
 
-    // [PIO Init]
-    drv_pio_init();
-
     // [I2C Init]
     app_lsm6dsv16x_init();
+
+#if 0
+    // [DMA Init]
+    drv_dma_init();
+
+    // [PIO Init]
+    drv_pio_init();
 
     // [SPI Init]
     drv_spi_init();
@@ -161,6 +162,7 @@ int main()
 
     printf("System Clock Frequency is %d Hz\n", clock_get_hz(clk_sys));
     printf("USB Clock Frequency is %d Hz\n", clock_get_hz(clk_usb));
+#endif
 
     // [App Init]
 

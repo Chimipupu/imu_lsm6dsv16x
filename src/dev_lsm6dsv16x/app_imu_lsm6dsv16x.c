@@ -30,6 +30,7 @@
 
 // ---------------------------------------------------
 // [Define]
+#define READ_BIT 0x80
 
 // ---------------------------------------------------
 // [Global]
@@ -121,14 +122,24 @@ static void drv_i2c_init(void)
 
 static int32_t platform_write(void *p_handle, uint8_t reg, const uint8_t *p_buf, uint16_t len)
 {
-    i2c_write_blocking(p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, &reg, 1, true);
-    i2c_write_blocking(p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, p_buf, len, true);
+#if 1
+    i2c_write_blocking(I2C_PORT, I2C_SLAVE_ADDR_LSM6DSV16X, &reg,    1, true);
+    i2c_write_blocking(I2C_PORT, I2C_SLAVE_ADDR_LSM6DSV16X, p_buf, len, true);
+#else
+    i2c_write_blocking((i2c_inst_t *)p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, &reg,    1, true);
+    i2c_write_blocking((i2c_inst_t *)p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, p_buf, len, true);
+#endif
 }
 
 static int32_t platform_read(void *p_handle, uint8_t reg, uint8_t *p_buf, uint16_t len)
 {
-    i2c_write_blocking(p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, &reg, 1, true);
-    i2c_read_blocking(p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, p_buf, len, false);
+#if 1
+    i2c_write_blocking(I2C_PORT, I2C_SLAVE_ADDR_LSM6DSV16X, &reg,    1, true);
+    i2c_read_blocking( I2C_PORT, I2C_SLAVE_ADDR_LSM6DSV16X, p_buf, len, false);
+#else
+    i2c_write_blocking((i2c_inst_t *)p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, &reg,   1, true);
+    i2c_read_blocking((i2c_inst_t *)p_handle, I2C_SLAVE_ADDR_LSM6DSV16X, p_buf, len, false);
+#endif
 }
 
 static void platform_delay(uint32_t ms)
@@ -236,13 +247,15 @@ void app_lsm6dsv16x_init(void)
     s_drv_ctx.mdelay = platform_delay;
     s_drv_ctx.handle = I2C_PORT;
 
+    platform_delay(100);
+
 #if 0
     // センサーの接続確認
     while(s_who_am_i != LSM6DSV16X_ID)
     {
         lsm6dsv16x_device_id_get(&s_drv_ctx, &s_who_am_i);
+        // platform_delay(20);
     }
-    printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
 #endif
 
     // センサー初期化
@@ -258,6 +271,8 @@ void app_lsm6dsv16x_init(void)
     // センサーから生データをReadできる設定で初期化
     sensor_init();
 #endif
+
+    printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
 }
 
 /**
@@ -276,8 +291,8 @@ void app_lsm6dsv16x_main(void)
         printf("Sensor Pedometer Steps :%d\r\n", s_step);
     }
 #else
-    lsm6dsv16x_device_id_get(&s_drv_ctx, &s_who_am_i);
-    printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
+    // lsm6dsv16x_device_id_get(&s_drv_ctx, &s_who_am_i);
+    // printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
 
     // [センサーの生データのRead]
     lsm6dsv16x_data_ready_t drdy;
