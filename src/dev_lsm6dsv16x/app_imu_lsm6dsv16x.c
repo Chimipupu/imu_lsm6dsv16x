@@ -249,7 +249,7 @@ void app_lsm6dsv16x_init(void)
 
     platform_delay(100);
 
-#if 0
+#if 1
     // センサーの接続確認
     while(s_who_am_i != LSM6DSV16X_ID)
     {
@@ -291,15 +291,14 @@ void app_lsm6dsv16x_main(void)
         printf("Sensor Pedometer Steps :%d\r\n", s_step);
     }
 #else
-    // lsm6dsv16x_device_id_get(&s_drv_ctx, &s_who_am_i);
-    // printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
-
     // [センサーの生データのRead]
     lsm6dsv16x_data_ready_t drdy;
     lsm6dsv16x_flag_data_ready_get(&s_drv_ctx, &drdy);
+    printf("drdy_xl = %d, drdy_gy = %d, drdy_temp = %d\n", drdy.drdy_xl, drdy.drdy_gy, drdy.drdy_temp);
 
     // [加速度の読み出し]
-    if (drdy.drdy_xl) {
+    // if (drdy.drdy_xl)
+    {
         memset(s_raw_acceleration_buf, 0x00, 3 * sizeof(int16_t));
         lsm6dsv16x_acceleration_raw_get(&s_drv_ctx, s_raw_acceleration_buf);
         s_acceleration_mg_buf[0] =
@@ -313,7 +312,8 @@ void app_lsm6dsv16x_main(void)
     }
 
     // [角速度の読み出し]
-    if (drdy.drdy_gy) {
+    // if (drdy.drdy_gy)
+    {
         memset(s_raw_angular_rate_buf, 0x00, 3 * sizeof(int16_t));
         lsm6dsv16x_angular_rate_raw_get(&s_drv_ctx, s_raw_angular_rate_buf);
         s_angular_rate_mdps_buf[0] =
@@ -327,7 +327,8 @@ void app_lsm6dsv16x_main(void)
     }
 
     // [温度の読み出し]
-    if (drdy.drdy_temp) {
+    // if (drdy.drdy_temp)
+    {
         memset(&s_raw_temperature, 0x00, sizeof(int16_t));
         lsm6dsv16x_temperature_raw_get(&s_drv_ctx, &s_raw_temperature);
         s_temperature_degC = lsm6dsv16x_from_lsb_to_celsius(

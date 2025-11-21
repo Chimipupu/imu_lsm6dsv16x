@@ -46,8 +46,13 @@
 
 // I2C
 #define I2C_PORT            i2c0
+#if 1
+#define I2C_SDA             4
+#define I2C_SCL             5
+#else
 #define I2C_SDA             8
 #define I2C_SCL             9
+#endif
 
 // SPI
 #define SPI_PORT            spi0

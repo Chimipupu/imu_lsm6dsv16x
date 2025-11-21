@@ -139,7 +139,7 @@ int main()
     stdio_init_all();
 
     // [UART Init]
-    // drv_uart_init();
+    drv_uart_init();
 
     // [I2C Init]
     app_lsm6dsv16x_init();
