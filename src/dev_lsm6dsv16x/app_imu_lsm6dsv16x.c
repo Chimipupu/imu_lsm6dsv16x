@@ -147,25 +147,6 @@ static void platform_delay(uint32_t ms)
     sleep_ms(ms);
 }
 
-static void sensor_init(void)
-{
-    lsm6dsv16x_xl_data_rate_set(&s_drv_ctx, LSM6DSV16X_ODR_AT_7Hz5);
-    lsm6dsv16x_gy_data_rate_set(&s_drv_ctx, LSM6DSV16X_ODR_AT_15Hz);
-
-    lsm6dsv16x_xl_full_scale_set(&s_drv_ctx, LSM6DSV16X_2g);
-    lsm6dsv16x_gy_full_scale_set(&s_drv_ctx, LSM6DSV16X_2000dps);
-
-    s_filt_settling_mask.drdy = PROPERTY_ENABLE;
-    s_filt_settling_mask.irq_xl = PROPERTY_ENABLE;
-    s_filt_settling_mask.irq_g = PROPERTY_ENABLE;
-
-    lsm6dsv16x_filt_settling_mask_set(&s_drv_ctx, s_filt_settling_mask);
-    lsm6dsv16x_filt_gy_lp1_set(&s_drv_ctx, PROPERTY_ENABLE);
-    lsm6dsv16x_filt_gy_lp1_bandwidth_set(&s_drv_ctx, LSM6DSV16X_GY_ULTRA_LIGHT);
-    lsm6dsv16x_filt_xl_lp2_set(&s_drv_ctx, PROPERTY_ENABLE);
-    lsm6dsv16x_filt_xl_lp2_bandwidth_set(&s_drv_ctx, LSM6DSV16X_XL_STRONG);
-}
-
 #if defined(SENSOR_PEDOMETER_USE)
 static void sensor_pedometer_init(void)
 {
@@ -188,6 +169,25 @@ static void sensor_pedometer_init(void)
 
     // センサースケール設定
     lsm6dsv16x_xl_full_scale_set(&s_drv_ctx, LSM6DSV16X_2g);
+}
+#else
+static void sensor_init(void)
+{
+    lsm6dsv16x_xl_data_rate_set(&s_drv_ctx, LSM6DSV16X_ODR_AT_7Hz5);
+    lsm6dsv16x_gy_data_rate_set(&s_drv_ctx, LSM6DSV16X_ODR_AT_15Hz);
+
+    lsm6dsv16x_xl_full_scale_set(&s_drv_ctx, LSM6DSV16X_2g);
+    lsm6dsv16x_gy_full_scale_set(&s_drv_ctx, LSM6DSV16X_2000dps);
+
+    s_filt_settling_mask.drdy = PROPERTY_ENABLE;
+    s_filt_settling_mask.irq_xl = PROPERTY_ENABLE;
+    s_filt_settling_mask.irq_g = PROPERTY_ENABLE;
+
+    lsm6dsv16x_filt_settling_mask_set(&s_drv_ctx, s_filt_settling_mask);
+    lsm6dsv16x_filt_gy_lp1_set(&s_drv_ctx, PROPERTY_ENABLE);
+    lsm6dsv16x_filt_gy_lp1_bandwidth_set(&s_drv_ctx, LSM6DSV16X_GY_ULTRA_LIGHT);
+    lsm6dsv16x_filt_xl_lp2_set(&s_drv_ctx, PROPERTY_ENABLE);
+    lsm6dsv16x_filt_xl_lp2_bandwidth_set(&s_drv_ctx, LSM6DSV16X_XL_STRONG);
 }
 #endif // SENSOR_PEDOMETER_USE
 
@@ -247,7 +247,8 @@ void app_lsm6dsv16x_init(void)
     s_drv_ctx.mdelay = platform_delay;
     s_drv_ctx.handle = I2C_PORT;
 
-    platform_delay(100);
+    // センサー初期化待ち
+    platform_delay(10);
 
 #if 1
     // センサーの接続確認
@@ -256,6 +257,8 @@ void app_lsm6dsv16x_init(void)
         lsm6dsv16x_device_id_get(&s_drv_ctx, &s_who_am_i);
         // platform_delay(20);
     }
+
+    printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
 #endif
 
     // センサー初期化
@@ -271,8 +274,6 @@ void app_lsm6dsv16x_init(void)
     // センサーから生データをReadできる設定で初期化
     sensor_init();
 #endif
-
-    printf("Who am I Reg(must be 0x07) = 0x%02X\n", s_who_am_i);
 }
 
 /**
@@ -297,7 +298,7 @@ void app_lsm6dsv16x_main(void)
     printf("drdy_xl = %d, drdy_gy = %d, drdy_temp = %d\n", drdy.drdy_xl, drdy.drdy_gy, drdy.drdy_temp);
 
     // [加速度の読み出し]
-    // if (drdy.drdy_xl)
+    if (drdy.drdy_xl)
     {
         memset(s_raw_acceleration_buf, 0x00, 3 * sizeof(int16_t));
         lsm6dsv16x_acceleration_raw_get(&s_drv_ctx, s_raw_acceleration_buf);
@@ -312,7 +313,7 @@ void app_lsm6dsv16x_main(void)
     }
 
     // [角速度の読み出し]
-    // if (drdy.drdy_gy)
+    if (drdy.drdy_gy)
     {
         memset(s_raw_angular_rate_buf, 0x00, 3 * sizeof(int16_t));
         lsm6dsv16x_angular_rate_raw_get(&s_drv_ctx, s_raw_angular_rate_buf);
@@ -327,7 +328,7 @@ void app_lsm6dsv16x_main(void)
     }
 
     // [温度の読み出し]
-    // if (drdy.drdy_temp)
+    if (drdy.drdy_temp)
     {
         memset(&s_raw_temperature, 0x00, sizeof(int16_t));
         lsm6dsv16x_temperature_raw_get(&s_drv_ctx, &s_raw_temperature);
